@@ -63,6 +63,9 @@ class QwenImage(Plugin):
             })
             self.default_ratio = qwen_config.get("default_ratio", "1:1")
             
+            # 默认负面提示词配置
+            self.default_negative_prompt = qwen_config.get("default_negative_prompt", "色调艳丽，过曝，静态，细节模糊不清，风格，画面，整体发灰，最差质量，低质量， JPEG压缩残留，丑陋的，残缺的，多余的手指，杂乱的背景，三条腿")
+            
             # 用户状态管理（用于存储每个用户的智能扩写设置）
             self.user_prompt_extend_settings = {}  # 用户ID -> 智能扩写设置
             self.global_prompt_extend = True  # 全局默认智能扩写设置
@@ -107,7 +110,7 @@ class QwenImage(Plugin):
                     break
 
             # 解析用户输入
-            prompt_text, image_size, model, prompt_extend = self.parse_user_input(content, e_context["context"])
+            prompt_text, image_size, model, prompt_extend, negative_prompt = self.parse_user_input(content, e_context["context"])
             logger.debug(f"[QwenImage] 解析后的参数: 提示词={prompt_text}, 尺寸={image_size}, 模型={model}")
 
             if not prompt_text:
@@ -123,7 +126,7 @@ class QwenImage(Plugin):
                 e_context["channel"].send(wait_reply, e_context["context"])
                 
                 # 生成图片
-                image_url = self.generate_image(prompt_text, image_size, model, prompt_extend)
+                image_url = self.generate_image(prompt_text, image_size, model, prompt_extend, negative_prompt)
                 logger.debug(f"[QwenImage] 生成的图片URL: {image_url}")
 
                 if image_url:
@@ -221,8 +224,8 @@ class QwenImage(Plugin):
             logger.warning(f"[QwenImage] 获取session_id失败: {e}，使用默认值")
             return "default_user"
 
-    def parse_user_input(self, content: str, context) -> Tuple[str, str, str, bool]:
-        """解析用户输入，提取提示词、图片尺寸、模型和智能改写设置"""
+    def parse_user_input(self, content: str, context) -> Tuple[str, str, str, bool, str]:
+        """解析用户输入，提取提示词、图片尺寸、模型、智能改写设置和负面提示词"""
         # 提取图片尺寸参数
         image_size = self.extract_image_size(content)
         
@@ -233,11 +236,14 @@ class QwenImage(Plugin):
         session_id = self.get_session_id(context)
         prompt_extend = self.get_user_prompt_extend_setting(session_id)
         
+        # 提取负面提示词
+        negative_prompt = self.extract_negative_prompt(content)
+        
         # 清理提示词，移除所有参数
         clean_prompt = self.clean_prompt_string(content)
         
-        logger.debug(f"[QwenImage] 解析用户输入: 尺寸={image_size}, 模型={model}, 智能改写={prompt_extend}, 清理后的提示词={clean_prompt}")
-        return clean_prompt, image_size, model, prompt_extend
+        logger.debug(f"[QwenImage] 解析用户输入: 尺寸={image_size}, 模型={model}, 智能改写={prompt_extend}, 负面提示词={negative_prompt}, 清理后的提示词={clean_prompt}")
+        return clean_prompt, image_size, model, prompt_extend, negative_prompt
 
     def get_user_prompt_extend_setting(self, session_id: str) -> bool:
         """获取用户的智能改写设置"""
@@ -284,11 +290,26 @@ class QwenImage(Plugin):
         clean_prompt = re.sub(r'--ar \d+:\d+', '', prompt)
         # 移除模型参数
         clean_prompt = clean_prompt.replace('--plus', '')
+        # 移除负面提示词参数
+        clean_prompt = re.sub(r'--负面提示：[^，。！？]*', '', clean_prompt)
         # 清理多余空格
         clean_prompt = re.sub(r'\s+', ' ', clean_prompt).strip()
         
         logger.debug(f"[QwenImage] 清理后的提示词: {clean_prompt}")
         return clean_prompt
+
+    def extract_negative_prompt(self, prompt: str) -> str:
+        """从用户提示词中提取负面提示词"""
+        # 尝试从提示词中提取负面提示词
+        match = re.search(r'--负面提示：(.+?)(?=\s*--|\s*$)', prompt)
+        if match:
+            negative_prompt = match.group(1).strip()
+            logger.debug(f"[QwenImage] 从提示词中提取负面提示词: {negative_prompt}")
+            return negative_prompt
+        else:
+            # 如果没有负面提示词，则使用默认的负面提示词
+            logger.debug(f"[QwenImage] 使用默认负面提示词: {self.default_negative_prompt}")
+            return self.default_negative_prompt
 
     def extract_ratio_from_prompt(self, prompt: str) -> str:
         """从用户提示词中直接提取比例信息"""
@@ -298,15 +319,16 @@ class QwenImage(Plugin):
         else:
             return self.default_ratio  # 返回默认比例
 
-    def generate_image(self, prompt: str, image_size: str, model: str, prompt_extend: bool) -> str:
+    def generate_image(self, prompt: str, image_size: str, model: str, prompt_extend: bool, negative_prompt: str) -> str:
         """调用Qwen Image API生成图片"""
-        logger.info(f"[QwenImage] 准备调用Qwen Image API生成图片，模型: {model}, 尺寸: {image_size}, 智能改写: {prompt_extend}, 当前账号: {self.current_account}")
+        logger.info(f"[QwenImage] 准备调用Qwen Image API生成图片，模型: {model}, 尺寸: {image_size}, 智能改写: {prompt_extend}, 负面提示词: {negative_prompt}, 当前账号: {self.current_account}")
 
         # 构建请求体
         payload = {
             "model": model,
             "input": {
-                "prompt": prompt
+                "prompt": prompt,
+                "negative_prompt": negative_prompt
             },
             "parameters": {
                 "size": image_size.replace('x', '*'),  # 将1024x1024转换为1024*1024
@@ -416,13 +438,17 @@ class QwenImage(Plugin):
         help_text += f"1. 使用 {', '.join(self.drawing_prefixes)} 作为画图命令前缀\n"
         help_text += "2. 使用 '--ar' 后跟比例来指定图片尺寸，例如：--ar 16:9\n"
         help_text += "3. 使用 '--plus' 参数调用plus模型（默认使用flash模型）\n"
-        help_text += f"4. 使用 {', '.join(self.control_prefixes)} 控制智能扩写功能\n"
-        help_text += f"5. 使用 {', '.join(self.account_prefixes)} 切换API账号\n"
+        help_text += "4. 使用 '--负面提示：内容' 指定负面提示词\n"
+        help_text += f"5. 使用 {', '.join(self.control_prefixes)} 控制智能扩写功能\n"
+        help_text += f"6. 使用 {', '.join(self.account_prefixes)} 切换API账号\n"
         help_text += f"示例：{self.drawing_prefixes[0]} 一只可爱的小猫 --ar 16:9\n"
         help_text += f"示例：{self.drawing_prefixes[0]} 一张酷炫的电影海报 --ar 3:4 --plus\n"
+        help_text += f"示例：{self.drawing_prefixes[0]} 美丽的花朵 --负面提示：模糊，低质量\n"
         help_text += f"可用的尺寸比例：{', '.join(self.ratios.keys())}\n"
         help_text += f"默认尺寸比例：{self.default_ratio}\n"
         help_text += f"可用模型：{', '.join(self.models)}\n"
         help_text += f"当前账号：{self.current_account}\n"
+        help_text += f"默认负面提示词：{self.default_negative_prompt}\n"
         help_text += "注意：智能改写功能对短提示词效果提升明显\n"
+        help_text += "注意：如果不指定负面提示词，将使用默认的负面提示词\n"
         return help_text 
