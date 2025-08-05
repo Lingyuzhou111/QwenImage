@@ -2,9 +2,9 @@
 
 QwenImage是一个适用于dow-859-ipad项目的画图插件，调用阿里云官方API进行文生图的插件，支持多种模型和参数配置。
 
-dow-859-ipad项目链接: https://github.com/Lingyuzhou111/dow-ipad-859
+> dow-859-ipad项目链接: https://github.com/Lingyuzhou111/dow-ipad-859
 
-获取API密钥: 访问 [阿里云通义千问](https://dashscope.console.aliyun.com/) 获取API密钥
+> 获取API密钥: 访问 [阿里云通义千问](https://dashscope.console.aliyun.com/) 获取API密钥
 
 ## 功能特性
 
@@ -148,3 +148,4 @@ Q切换账号 2      # 切换到账号2
 - 支持智能扩写控制
 
 - 支持多账号切换 
+
