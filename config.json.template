@@ -1,0 +1,21 @@
+{
+"image_command": ["Q画图", "Q生成"],
+"control_command": ["Q开启智能扩写", "Q禁用智能扩写"],
+"account_command": ["Q切换账号 1", "Q切换账号 2"],
+"qwen_image": {
+    "base_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis",
+    "model": ["wan2.2-t2i-flash", "wan2.2-t2i-plus"],
+    "api_key_1": "",
+    "api_key_2": "",
+    "default_ratio": "1:1",     
+    "ratios": {
+        "1:1": {"width": 1024, "height": 1024},
+        "2:3": {"width": 896, "height": 1344},
+        "3:4": {"width": 960, "height": 1280},
+        "4:3": {"width": 1280, "height": 960},
+        "3:2": {"width": 1344, "height": 896},
+        "16:9": {"width": 1344, "height": 768},
+        "9:16": {"width": 768, "height": 1344}
+        }
+    }
+}
