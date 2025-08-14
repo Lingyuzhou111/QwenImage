@@ -4,18 +4,17 @@
 "account_command": ["Q切换账号 1", "Q切换账号 2"],
 "qwen_image": {
     "base_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis",
-    "model": ["wan2.2-t2i-flash", "wan2.2-t2i-plus"],
+    "model": ["qwen-image", "wan2.2-t2i-flash", "wan2.2-t2i-plus"],
     "api_key_1": "",
     "api_key_2": "",
     "default_ratio": "1:1",     
     "ratios": {
-        "1:1": {"width": 1024, "height": 1024},
-        "2:3": {"width": 896, "height": 1344},
-        "3:4": {"width": 960, "height": 1280},
-        "4:3": {"width": 1280, "height": 960},
-        "3:2": {"width": 1344, "height": 896},
-        "16:9": {"width": 1344, "height": 768},
-        "9:16": {"width": 768, "height": 1344}
+        "1:1": {"width": 1328, "height": 1328},
+        "3:4": {"width": 1140, "height": 1472},
+        "4:3": {"width": 1472, "height": 1140},
+        "16:9": {"width": 1664, "height": 928},
+        "9:16": {"width": 928, "height": 1664}
         }
     }
 }
+
