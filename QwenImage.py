@@ -33,8 +33,8 @@ class QwenImage(Plugin):
                 raise Exception("在配置中未找到qwen_image配置。")
 
             self.base_url = qwen_config.get("base_url", "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis")
-            self.models = qwen_config.get("model", ["wan2.2-t2i-flash", "wan2.2-t2i-plus"])
-            self.default_model = self.models[0] if self.models else "wan2.2-t2i-flash"
+            self.models = qwen_config.get("model", ["qwen-image", "wan2.2-t2i-flash", "wan2.2-t2i-plus"])
+            self.default_model = "qwen-image"  # 默认使用qwen-image模型
             
             # API密钥配置
             self.api_key_1 = qwen_config.get("api_key_1", "")
@@ -53,13 +53,11 @@ class QwenImage(Plugin):
             
             # 图片比例配置
             self.ratios = qwen_config.get("ratios", {
-                "1:1": {"width": 1024, "height": 1024},
-                "2:3": {"width": 896, "height": 1344},
-                "3:4": {"width": 960, "height": 1280},
-                "4:3": {"width": 1280, "height": 960},
-                "3:2": {"width": 1344, "height": 896},
-                "16:9": {"width": 1344, "height": 768},
-                "9:16": {"width": 768, "height": 1344}
+                "1:1": {"width": 1328, "height": 1328},
+                "3:4": {"width": 1140, "height": 1472},
+                "4:3": {"width": 1472, "height": 1140},
+                "16:9": {"width": 1664, "height": 928},
+                "9:16": {"width": 928, "height": 1664}
             })
             self.default_ratio = qwen_config.get("default_ratio", "1:1")
             
@@ -119,7 +117,7 @@ class QwenImage(Plugin):
             else:
                 # 发送进度提醒消息
                 ratio_display = self.extract_ratio_from_prompt(e_context["context"].content)
-                progress_message = f"正在使用 {model} 模型以 {ratio_display} 比例生成图片，请稍候..."
+                progress_message = f"🌁正在使用 {model} 模型以 {ratio_display} 比例生成图片，请稍候..."
                 
                 # 先发送进度提醒
                 wait_reply = Reply(ReplyType.TEXT, progress_message)
@@ -272,15 +270,23 @@ class QwenImage(Plugin):
 
     def extract_model(self, prompt: str) -> str:
         """提取模型参数"""
+        # 检查是否指定了flash模型
+        if "--flash" in prompt:
+            # 查找flash模型
+            for model in self.models:
+                if "flash" in model.lower():
+                    logger.debug(f"[QwenImage] 检测到--flash参数，使用模型: {model}")
+                    return model
+        
         # 检查是否指定了plus模型
-        if "--plus" in prompt:
+        elif "--plus" in prompt:
             # 查找plus模型
             for model in self.models:
                 if "plus" in model.lower():
                     logger.debug(f"[QwenImage] 检测到--plus参数，使用模型: {model}")
                     return model
         
-        # 默认使用第一个模型（通常是flash模型）
+        # 默认使用qwen-image模型
         logger.debug(f"[QwenImage] 使用默认模型: {self.default_model}")
         return self.default_model
 
@@ -290,6 +296,7 @@ class QwenImage(Plugin):
         clean_prompt = re.sub(r'--ar \d+:\d+', '', prompt)
         # 移除模型参数
         clean_prompt = clean_prompt.replace('--plus', '')
+        clean_prompt = clean_prompt.replace('--flash', '')
         # 移除负面提示词参数
         clean_prompt = re.sub(r'--负面提示：[^，。！？]*', '', clean_prompt)
         # 清理多余空格
@@ -437,12 +444,13 @@ class QwenImage(Plugin):
         help_text = "Qwen Image 插件使用指南：\n"
         help_text += f"1. 使用 {', '.join(self.drawing_prefixes)} 作为画图命令前缀\n"
         help_text += "2. 使用 '--ar' 后跟比例来指定图片尺寸，例如：--ar 16:9\n"
-        help_text += "3. 使用 '--plus' 参数调用plus模型（默认使用flash模型）\n"
+        help_text += "3. 使用 '--flash' 参数调用flash模型，使用 '--plus' 参数调用plus模型（默认使用qwen-image模型）\n"
         help_text += "4. 使用 '--负面提示：内容' 指定负面提示词\n"
         help_text += f"5. 使用 {', '.join(self.control_prefixes)} 控制智能扩写功能\n"
         help_text += f"6. 使用 {', '.join(self.account_prefixes)} 切换API账号\n"
         help_text += f"示例：{self.drawing_prefixes[0]} 一只可爱的小猫 --ar 16:9\n"
         help_text += f"示例：{self.drawing_prefixes[0]} 一张酷炫的电影海报 --ar 3:4 --plus\n"
+        help_text += f"示例：{self.drawing_prefixes[0]} 快速生成的风景画 --ar 16:9 --flash\n"
         help_text += f"示例：{self.drawing_prefixes[0]} 美丽的花朵 --负面提示：模糊，低质量\n"
         help_text += f"可用的尺寸比例：{', '.join(self.ratios.keys())}\n"
         help_text += f"默认尺寸比例：{self.default_ratio}\n"
