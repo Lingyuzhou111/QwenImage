@@ -1,6 +1,6 @@
 # QwenImage 插件
 
-QwenImage是一个适用于dow-859-ipad项目的画图插件，调用阿里云官方API进行文生图的插件，支持多种模型和参数配置。
+QwenImage是一个适用于dow-859-ipad项目的画图插件，调用阿里云官方API进行文生图和图生图的插件，支持多种模型和参数配置。
 
 > dow-859-ipad项目链接: https://github.com/Lingyuzhou111/dow-ipad-859
 
@@ -10,6 +10,7 @@ QwenImage是一个适用于dow-859-ipad项目的画图插件，调用阿里云�
 
 ### 1. 多模型支持
 - **qwen-image**: 默认模型，平衡质量和速度
+- **qwen-image-edit**: 20250818最新发布的图像编辑模型
 - **wan2.2-t2i-flash**: 快速生成模型，适合快速预览
 - **wan2.2-t2i-plus**: 高质量模型，适合最终作品
 
@@ -98,24 +99,29 @@ Q切换账号 2      # 切换到账号2
 ### 配置文件结构
 ```json
 {
-  "image_command": ["Q画", "Q画图", "Q生成"],
-  "control_command": ["Q开启智能扩写", "Q禁用智能扩写"],
-  "account_command": ["Q切换账号 1", "Q切换账号 2"],
-  "qwen_image": {
+"image_command": ["Q画", "Q画图", "Q生成"],
+"image_edit_command": ["Q改图", "Q编辑"],
+"control_command": ["Q开启智能扩写", "Q禁用智能扩写"],
+"account_command": ["Q切换账号 1", "Q切换账号 2"],
+"api_key_1": "your_api_key_1",
+"api_key_2": "your_api_key_2",
+"qwen_image_edit": {
+    "base_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+    "model": ["qwen-image-edit"]
+    },
+"qwen_image": {
     "base_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis",
     "model": ["qwen-image", "wan2.2-t2i-flash", "wan2.2-t2i-plus"],
-    "api_key_1": "your_api_key_1",
-    "api_key_2": "your_api_key_2",
-    "default_ratio": "1:1",
-    "default_negative_prompt": "默认负面提示词",
+    "default_ratio": "1:1",     
+    "default_negative_prompt": "色调艳丽，过曝，静态，细节模糊不清，风格，画面，整体发灰，最差质量，低质量， JPEG压缩残留，丑陋的，残缺的，多余的手指，杂乱的背景，三条腿",
     "ratios": {
-      "1:1": {"width": 1328, "height": 1328},
-      "3:4": {"width": 1140, "height": 1472},
-      "4:3": {"width": 1472, "height": 1140},
-      "16:9": {"width": 1664, "height": 928},
-      "9:16": {"width": 928, "height": 1664}
+        "1:1": {"width": 1328, "height": 1328},
+        "3:4": {"width": 1140, "height": 1472},
+        "4:3": {"width": 1472, "height": 1140},
+        "16:9": {"width": 1664, "height": 928},
+        "9:16": {"width": 928, "height": 1664}
+        }
     }
-  }
 }
 ```
 
@@ -168,3 +174,4 @@ Q切换账号 2      # 切换到账号2
 ## 技术支持
 
 如有问题或建议，请查看日志文件或联系开发者。 
+
