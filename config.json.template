@@ -1,13 +1,19 @@
 {
-"image_command": ["Q画图", "Q生成"],
+"image_command": ["Q画", "Q画图", "Q生成"],
+"image_edit_command": ["Q改图", "Q编辑"],
 "control_command": ["Q开启智能扩写", "Q禁用智能扩写"],
 "account_command": ["Q切换账号 1", "Q切换账号 2"],
+"api_key_1": "",
+"api_key_2": "",
+"qwen_image_edit": {
+    "base_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+    "model": ["qwen-image-edit"]
+    },
 "qwen_image": {
     "base_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis",
     "model": ["qwen-image", "wan2.2-t2i-flash", "wan2.2-t2i-plus"],
-    "api_key_1": "",
-    "api_key_2": "",
     "default_ratio": "1:1",     
+    "default_negative_prompt": "色调艳丽，过曝，静态，细节模糊不清，风格，画面，整体发灰，最差质量，低质量， JPEG压缩残留，丑陋的，残缺的，多余的手指，杂乱的背景，三条腿",
     "ratios": {
         "1:1": {"width": 1328, "height": 1328},
         "3:4": {"width": 1140, "height": 1472},
@@ -17,4 +23,3 @@
         }
     }
 }
-
